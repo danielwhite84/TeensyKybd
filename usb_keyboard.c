@@ -25,7 +25,6 @@
 // Version 1.1: Add support for Teensy 2.0
 
 #define USB_SERIAL_PRIVATE_INCLUDE
-#include "usb_dual.h"
 #include "usb_keyboard.h"
 
 /**************************************************************************
@@ -345,17 +344,6 @@ int8_t usb_keyboard_send(void)
 
 
 
-// USB Device Interrupt - handle all device-level events
-// the transmit buffer flushing is triggered by the start of frame
-//
-ISR(USB_GEN_vect)
-{
-//	if (b_mode_kybd)
-		kybd_usb_gen_vector();
-//	else
-//		usbs_usb_gen_vector();
-}
-
 void kybd_usb_gen_vector()
 {
 	uint8_t intbits, i;
@@ -391,6 +379,13 @@ void kybd_usb_gen_vector()
 }
 
 
+// USB Device Interrupt - handle all device-level events
+// the transmit buffer flushing is triggered by the start of frame
+//
+ISR(USB_GEN_vect)
+{
+	kybd_usb_gen_vector();
+}
 
 // Misc functions to wait for ready and send/receive packets
 static inline void usb_wait_in_ready(void)
@@ -598,8 +593,5 @@ void kybd_usb_com_vector()
 //
 ISR(USB_COM_vect)
 {
-//	if (b_mode_kybd)
-		kybd_usb_com_vector();
-//	else
-//		usbs_usb_com_vector();
+	kybd_usb_com_vector();
 }
