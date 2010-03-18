@@ -6,6 +6,8 @@
 #include "usb_keyboard.h"
 #include "eeprom.h"
 
+const char blue_str[] PROGMEM = "This is a string ";
+
 #define CPU_PRESCALE(n)	(CLKPR = 0x80, CLKPR = (n))
 
 int8_t flash_leds = 0;
@@ -31,15 +33,9 @@ void set_led_state(int8_t which)
 	}
 	sei();
 }
-int8_t get_led_state()
-{
-	return which_led;
-}
 
-int is_btn_down()
-{
-	return ((PINE & 0b01000000)==0);
-}
+#define get_led_state()    (which_led)
+#define is_btn_down()      ((PINE & 0b01000000)==0)
 
 char buf[256];
 
@@ -66,7 +62,7 @@ void wdt_init(void)
     return;
 }
 
-int b_mode_kybd = 1;
+//int b_mode_kybd = 1;
 
 static uint8_t k[] = {KEY_A,KEY_B,KEY_C,KEY_D,KEY_E,KEY_F,KEY_G,KEY_H,KEY_I,KEY_J,
 			KEY_K,KEY_L,KEY_M,KEY_N,KEY_O,KEY_P,KEY_Q,KEY_R,KEY_S,
@@ -118,6 +114,16 @@ void kybd_type(char* pbuf,int bcnt)
 			usb_keyboard_press(KEY_MINUS, 0);
 		}
 	}
+}
+
+int pgm_fetch_str(int ledstate,char* pbuf,int buf_bcnt_max)
+{
+	int i=0;
+	for (; (pgm_read_byte(&blue_str[i]) && (i<buf_bcnt_max)); i++)  
+	{       
+		pbuf[i] = pgm_read_byte(&blue_str[i]);
+	} 
+	return i;
 }
 
 int main(void)
@@ -175,7 +181,7 @@ int main(void)
 				downtime += 0.250;
 				_delay_ms(250);
 
-				if ((downtime > 1.0)&&(get_led_state!=LED_NONE)) set_led_state(LED_NONE);
+				if ((downtime > 1.0)&&(get_led_state()!=LED_NONE)) set_led_state(LED_NONE);
 			}
 			while (is_btn_down());
 
@@ -192,7 +198,8 @@ int main(void)
 				{
 					// Do appropriate action for given color state
 					memset(buf,0,sizeof(buf));
-					int bcnt_ret = ee_readback(stringnumber,buf,sizeof(buf));
+					//int bcnt_ret = ee_readback(stringnumber,buf,sizeof(buf));
+					int bcnt_ret = pgm_fetch_str(get_led_state(),buf,sizeof(buf));
 					kybd_type(buf,bcnt_ret);
 				}
 			}
