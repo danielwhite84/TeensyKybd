@@ -5,7 +5,6 @@
 #include <avr/wdt.h>
 #include "usb_dual.h"
 #include "usb_keyboard.h"
-#include "usb_serial.h"
 #include "eeprom.h"
 
 #define CPU_PRESCALE(n)	(CLKPR = 0x80, CLKPR = (n))
@@ -122,6 +121,40 @@ void kybd_type(char* pbuf,int bcnt)
 	}
 }
 
+void numset(uint32_t n,char* pbuf)
+{
+	char tmp[16];
+	memset(tmp,0,sizeof(tmp));
+	int pos = 0;
+
+	while(n>0)
+	{
+		int digit = n % 10;
+		switch(digit)
+		{
+		case 0:  tmp[pos++] = '0'; break;
+		case 1:  tmp[pos++] = '1'; break;
+		case 2:  tmp[pos++] = '2'; break;
+		case 3:  tmp[pos++] = '3'; break;
+		case 4:  tmp[pos++] = '4'; break;
+		case 5:  tmp[pos++] = '5'; break;
+		case 6:  tmp[pos++] = '6'; break;
+		case 7:  tmp[pos++] = '7'; break;
+		case 8:  tmp[pos++] = '8'; break;
+		case 9:  tmp[pos++] = '9'; break;
+		default:  tmp[pos++] = '?'; 
+		}
+		n = n / 10;
+	}
+
+	for(int i=pos-1; i>=0; i--)
+	{
+		pbuf[0] = tmp[i];
+		pbuf++;
+	}
+
+}
+
 int main(void)
 {
 	// set for 16 MHz clock
@@ -142,31 +175,31 @@ int main(void)
 
 	set_led_state(LED_NONE);
 
-	if (is_btn_down())
-	{
-		_delay_ms(1000);
-		while (is_btn_down()) 
-		{ 
-			b_mode_kybd = 0;
-			set_led_state(LED_RED);
-			_delay_ms(1000);
-		}
-		_delay_ms(1000);
-	}
+	flash_leds = 0;
+	usb_init();
+        while (!usb_configured()) ;
+	_delay_ms(1000); // Wait for PC
 
-	if (b_mode_kybd)
+// Cap sensing experiment
+	DDRC = 0b00000000; // C7 is input
+	PORTC = 0b01111111; // C7 is not pulled up
+	DDRF = 0b11111111; // F7 is output
+for(;;)
+{
+	PORTF = 0b11111111; // F7 high
+	_delay_ms(1000);
+	PORTF = 0b00000000; // F7 low
+	uint32_t cntr = 0;
+	for(;;cntr++)
 	{
-		flash_leds = 0;
-		usb_init();
-                while (!usb_configured()) ;
-		_delay_ms(1000); // Wait for PC
-	} else {
-		set_led_state(LED_NONE);
-		flash_leds = 1;
-		usbs_usb_init();
-                while (!usbs_usb_configured()) ;
-                _delay_ms(1000);   // Wait for PC
+		uint8_t pc = PINC;
+		if (pc & 0b10000000) {} else {break;}
 	}
+	memset(buf,0,sizeof(buf));
+	numset(cntr,buf);
+	kybd_type(buf,32);
+}
+//for(;;){}
 
 	int vert = 0, horz = 0;
 	uint8_t prev_pind = PIND;
@@ -215,163 +248,13 @@ int main(void)
 				{
 					// Do appropriate action for given color state
 					memset(buf,0,sizeof(buf));
-					if (b_mode_kybd) {
-						int bcnt_ret = ee_readback(stringnumber,buf,sizeof(buf));
-						kybd_type(buf,bcnt_ret);
-					} else {
-						int bcnt = 0;
-						_delay_ms(250);
-						while (!is_btn_down())
-						{
-							if (usb_serial_available() > 0)
-							{
-								char c = usb_serial_getchar();
-								buf[bcnt++] = c;
-								usb_serial_putchar(c);
-								usb_serial_flush_output();
-								if (bcnt==sizeof(buf)) break;
-							}
-						}
-						usb_serial_flush_input();
-
-						// Write to EEPROM
-						int ret = ee_overwrite(stringnumber,buf,bcnt);
-		
-						// Print completion msg
-						sprintf(buf,"\r\nSaved %d byte string to #%d\r\n",bcnt,stringnumber);
-						usb_serial_write(buf,strlen(buf));
-						usb_serial_flush_output();
-
-						// Restart
-						while (is_btn_down()) ;
-						_delay_ms(250);
-						soft_reset();
-					}
+					int bcnt_ret = ee_readback(stringnumber,buf,sizeof(buf));
+					kybd_type(buf,bcnt_ret);
 				}
 			}
 		}
 	}
 
-/*
-	// Determine mode depending on whether any button is down
-	b_mode_kybd = 1;
-	uint8_t program_btn;
-	if (BTN1_DOWN)
-	{
-		_delay_ms(1000);
-		if (BTN1_DOWN) { b_mode_kybd = 0; program_btn=1; }
-	} else if (BTN2_DOWN) {
-		_delay_ms(1000);
-		if (BTN2_DOWN) { b_mode_kybd = 0; program_btn=2; }
-	} else if (BTN3_DOWN) {
-		_delay_ms(1000);
-		if (BTN3_DOWN) { b_mode_kybd = 0; program_btn=3; }
-	} 
-	RED_CTRL(0);
-
-	// Value of mode switch determines whether we start up as a kybd or a USB serial port
-	if (b_mode_kybd)
-	{
-		GRN_CTRL(1); // Solid green in normal mode
-		usb_init();
-		while (!usb_configured()) ;
-		_delay_ms(1000);   // Give PC extra time
-
-		usb_keyboard_press(KEY_H, KEY_SHIFT);
-		_delay_ms(2);
-		usb_keyboard_press(KEY_I, 0);
-		_delay_ms(2);
-		usb_keyboard_press(KEY_SPACE, 0);
-		_delay_ms(2);
-
-		// Do normal button push handling here
-		while(1) 
-		{
-			char buf[255];
-
-			// Test button 1
-			if (BTN1_DOWN)
-			{
-				while (BTN1_DOWN) 
-				{
-					if (user_requested_reset()) soft_reset();
-					else _delay_ms(100);
-				}
-				int bcnt_ret = ee_readback(1,buf,sizeof(buf));
-				led_assert((int)(bcnt_ret>=0));
-				kybd_type(buf,bcnt_ret);
-			}
-
-			// Test button 2
-			if (BTN2_DOWN)
-			{
-				while (BTN2_DOWN)
-				{
-					if (user_requested_reset()) soft_reset();
-					else _delay_ms(100);
-				}
-				int bcnt_ret = ee_readback(2,buf,sizeof(buf));
-                                led_assert((int)(bcnt_ret>=0));
-                                kybd_type(buf,bcnt_ret);
-			}
-
-			// Test button 3
-			if (BTN3_DOWN)
-			{
-				while (BTN3_DOWN)
-				{
-					if (user_requested_reset()) soft_reset();
-					else _delay_ms(100);
-				}
-				int bcnt_ret = ee_readback(3,buf,sizeof(buf));
-                                led_assert((int)(bcnt_ret>=0));
-                                kybd_type(buf,bcnt_ret);
-			}
-		}
-	} else {
-		GRN_FLASH(1);  // Flashing green in programmable mode
-
-		usbs_usb_init();
-		while (!usbs_usb_configured()) ;
-                _delay_ms(1000);   // Give PC extra time
-
-		// Wait until all buttons are up
-		while(!(BTN1_UP&&BTN2_UP&&BTN3_UP)) ;
-
-		// Get next byte until a button goes down (signals stop)
-		int bcnt= 0;
-		char buf[256];
-		memset(buf,0,sizeof(buf));
-		while(BTN1_UP&&BTN2_UP&&BTN3_UP)
-		{
-			if (usb_serial_available() > 0)
-			{
-				char c = usb_serial_getchar();
-				buf[bcnt++] = c;
-				//if (c=='\n') usb_serial_putchar('\r');
-				usb_serial_putchar(c);
-				usb_serial_flush_output();
-				if (bcnt==sizeof(buf)) break;
-			}
-		}
-		usb_serial_flush_input();
-
-		// Write to EEPROM
-		int ret = ee_overwrite(program_btn,buf,bcnt);
-		led_assert((int)(ret==0));
-		
-		// Print completion msg
-		sprintf(buf,"\r\nSaved %d byte string to button #%d\r\n",bcnt,program_btn);
-		usb_serial_write(buf,strlen(buf));
-		usb_serial_flush_output();
-
-		GRN_FLASH(0);
-
-		//usb_serial_flush_input();
-		_delay_ms(3000); 
-		soft_reset(); 
-	}
-*/
 }
 
 // Fires about 61 times/sec, but we further scale this down to 6 Hz here

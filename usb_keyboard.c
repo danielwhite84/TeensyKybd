@@ -350,10 +350,10 @@ int8_t usb_keyboard_send(void)
 //
 ISR(USB_GEN_vect)
 {
-	if (b_mode_kybd)
+//	if (b_mode_kybd)
 		kybd_usb_gen_vector();
-	else
-		usbs_usb_gen_vector();
+//	else
+//		usbs_usb_gen_vector();
 }
 
 void kybd_usb_gen_vector()
@@ -598,8 +598,8 @@ void kybd_usb_com_vector()
 //
 ISR(USB_COM_vect)
 {
-	if (b_mode_kybd)
+//	if (b_mode_kybd)
 		kybd_usb_com_vector();
-	else
-		usbs_usb_com_vector();
+//	else
+//		usbs_usb_com_vector();
 }
