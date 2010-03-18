@@ -1,7 +1,9 @@
-TeensyKydb is a simple device in which a Teensy++ 2.0 board (http://www.pjrc.com/teensy/) is wired up and soldered to a Blackberry USB trackball that, which clicked, will type out a memorized text string like a passphrase or RSA key.  The device emulates a USB keyboard and clicking the ball has exactly the same effect as plugging in a real USB keyboard and typing the memorized text very quickly.
+TeensyKydb is a simple device in which a Teensy++ 2.0 board (http://www.pjrc.com/teensy/) has a Blackberry trackball (http://www.sparkfun.com/commerce/product_info.php?products_id=9320) soldered on top of it.  When clicked, the devce will type out a memorized text string like a passphrase or RSA key.  The device emulates a generic USB HID keyboard so clicking the ball has exactly the same effect as plugging in a real USB keyboard and quickly typing the memorized text manually.
 
-You can spin the trackball in four different directions (indicated by the four colors) to enter up to four different memorized strings.
+You can spin the trackball in four different directions (indicated by the four color states) to enter up to four different memorized strings.
 
 Example:  You pre-program the blue string to be "password12345".  Now, you can plug the TeensyKybd device into any Mac, Windows or Linux PC's USB slot, roll around to the blue state, and click the trackball.  The string "password12345" will be typed into the current application's input field just as if you'd typed it on a real keyboard. 
 
-To state the obvious, strings are stored unencrypted and a lost or stolen TeensyKybd will immediately reveal your strings to the thief.  (For instance, he could open Windows Notepad, plug in the device, and roll over to each color to see the plaintext strings.)  So, use it to avoid repetitive typing, not as a security device.
+(To state the obvious, strings are stored unencrypted and a lost or stolen TeensyKybd will immediately reveal your strings to the thief.  So, don't actually store passwords you care about in the device.)
+
+I created this primarily to learn more about USB HID, Teensy, board layout and manufacturing, and for fun.  I use it to avoid repetitive typing, and open sourced the code mainly to get familiar with git.  Use at your own risk.
