@@ -1,9 +1,20 @@
-TeensyKydb is a simple device in which a Teensy++ 2.0 board (http://www.pjrc.com/teensy/) has a Blackberry trackball (http://www.sparkfun.com/commerce/product_info.php?products_id=9320) soldered on top of it.  When clicked, the devce will type out a memorized text string like a passphrase or RSA key.  The device emulates a generic USB HID keyboard so clicking the ball has exactly the same effect as plugging in a real USB keyboard and quickly typing the memorized text manually.
+===================
+What is TeensyKybd?
+===================
 
-You can spin the trackball in four different directions (indicated by the four color states) to enter up to four different memorized strings.
+If you're trying to determine what the hell this device is, please refer to http://wiki.github.com/mgoelzer/TeensyKybd/
 
-Example:  You pre-program the blue string to be "password12345".  Now, you can plug the TeensyKybd device into any Mac, Windows or Linux PC's USB slot, roll around to the blue state, and click the trackball.  The string "password12345" will be typed into the current application's input field just as if you'd typed it on a real keyboard. 
+==============
+How to compile
+==============
 
-(To state the obvious, strings are stored unencrypted and a lost or stolen TeensyKybd will immediately reveal your strings to the thief.  So, don't actually store passwords you care about in the device.)
+Type `make' in this directory.  
 
-I created this primarily to learn more about USB HID, Teensy, board layout and manufacturing, and for fun.  I use it to avoid repetitive typing, and open sourced the code mainly to get familiar with git.  Use at your own risk.
+(You will need gcc-avr and so forth installed.  Refer to the Teensy documentation and examples to get the build environment set up.  The code is entirely C; no "Teensyduino" environment or libraries are needed.)
+
+================
+How to construct
+================
+
+The physical device can be built by wiring up the two boards as shown in the Kicad schematic.
+
