@@ -4,13 +4,7 @@
 #include <util/delay.h>
 #include <avr/wdt.h>
 #include "usb_keyboard.h"
-//#include "eeprom.h"
-
-const char blue_str[] PROGMEM = "This is BLUE string ";
-const char red_str[] PROGMEM = "This is RED string ";
-const char green_str[] PROGMEM = "This is GREEN string ";
-const char white_str[] PROGMEM = "This is WHITE string ";
-const char none_str[] PROGMEM = "";
+#include "my_strings.h"
 
 #define CPU_PRESCALE(n)	(CLKPR = 0x80, CLKPR = (n))
 
