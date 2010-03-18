@@ -3,7 +3,6 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #include <avr/wdt.h>
-#include "usb_dual.h"
 #include "usb_keyboard.h"
 #include "eeprom.h"
 
@@ -121,40 +120,6 @@ void kybd_type(char* pbuf,int bcnt)
 	}
 }
 
-void numset(uint32_t n,char* pbuf)
-{
-	char tmp[16];
-	memset(tmp,0,sizeof(tmp));
-	int pos = 0;
-
-	while(n>0)
-	{
-		int digit = n % 10;
-		switch(digit)
-		{
-		case 0:  tmp[pos++] = '0'; break;
-		case 1:  tmp[pos++] = '1'; break;
-		case 2:  tmp[pos++] = '2'; break;
-		case 3:  tmp[pos++] = '3'; break;
-		case 4:  tmp[pos++] = '4'; break;
-		case 5:  tmp[pos++] = '5'; break;
-		case 6:  tmp[pos++] = '6'; break;
-		case 7:  tmp[pos++] = '7'; break;
-		case 8:  tmp[pos++] = '8'; break;
-		case 9:  tmp[pos++] = '9'; break;
-		default:  tmp[pos++] = '?'; 
-		}
-		n = n / 10;
-	}
-
-	for(int i=pos-1; i>=0; i--)
-	{
-		pbuf[0] = tmp[i];
-		pbuf++;
-	}
-
-}
-
 int main(void)
 {
 	// set for 16 MHz clock
@@ -179,27 +144,6 @@ int main(void)
 	usb_init();
         while (!usb_configured()) ;
 	_delay_ms(1000); // Wait for PC
-
-// Cap sensing experiment
-	DDRC = 0b00000000; // C7 is input
-	PORTC = 0b01111111; // C7 is not pulled up
-	DDRF = 0b11111111; // F7 is output
-for(;;)
-{
-	PORTF = 0b11111111; // F7 high
-	_delay_ms(1000);
-	PORTF = 0b00000000; // F7 low
-	uint32_t cntr = 0;
-	for(;;cntr++)
-	{
-		uint8_t pc = PINC;
-		if (pc & 0b10000000) {} else {break;}
-	}
-	memset(buf,0,sizeof(buf));
-	numset(cntr,buf);
-	kybd_type(buf,32);
-}
-//for(;;){}
 
 	int vert = 0, horz = 0;
 	uint8_t prev_pind = PIND;
